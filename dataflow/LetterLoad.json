@@ -1,0 +1,32 @@
+{
+	"name": "LetterLoad",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "Letter_source",
+						"type": "DatasetReference"
+					},
+					"name": "source1"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "Letter_DB",
+						"type": "DatasetReference"
+					},
+					"name": "sink1"
+				}
+			],
+			"transformations": [
+				{
+					"name": "DerivedColumn1"
+				}
+			],
+			"script": "source(output(\n\t\tcompany_id as string,\n\t\tcase_id as string,\n\t\tletter_seq as string,\n\t\tstandard_letter_id as string,\n\t\tletter_type_code as string,\n\t\tsend_to_address_id as string,\n\t\tcustom_file_name as string,\n\t\tdate_sent as string,\n\t\tfaxed as string,\n\t\tcarbon_copy_1 as string,\n\t\tcarbon_copy_2 as string,\n\t\tcarbon_copy_3 as string,\n\t\tcarbon_copy_4 as string,\n\t\tcarbon_copy_5 as string,\n\t\tproofed as string,\n\t\temail_to as string,\n\t\temail_subject as string,\n\t\temail_type as string,\n\t\tauto_prep as string,\n\t\tcustomized as string,\n\t\tletter_status as string,\n\t\tdate_entered as string,\n\t\tentered_by_user_code as string,\n\t\tfile_size as string,\n\t\tbatch_id as string,\n\t\tselected as string,\n\t\tissue_seq as string,\n\t\temail_sender as string,\n\t\temail_cc as string,\n\t\temail_bcc as string,\n\t\tdocument_type as string,\n\t\tlanguage_id as string,\n\t\tdate_changed as string,\n\t\tchanged_by_user_code as string,\n\t\tdtProcessedDate as string,\n\t\tbDelete as string\n\t),\n\tallowSchemaDrift: false,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> source1\nsource1 derive(custom_file_name = iif(isNull(custom_file_name), 'Unknown', custom_file_name)) ~> DerivedColumn1\nDerivedColumn1 sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tinput(\n\t\tcompany_id as string,\n\t\tcase_id as string,\n\t\tletter_seq as string,\n\t\tstandard_letter_id as string,\n\t\tletter_type_code as string,\n\t\tsend_to_address_id as string,\n\t\tcustom_file_name as string,\n\t\tdate_sent as string,\n\t\tfaxed as string,\n\t\tcarbon_copy_1 as string,\n\t\tcarbon_copy_2 as string,\n\t\tcarbon_copy_3 as string,\n\t\tcarbon_copy_4 as string,\n\t\tcarbon_copy_5 as string,\n\t\tproofed as string,\n\t\temail_to as string,\n\t\temail_subject as string,\n\t\temail_type as string,\n\t\tauto_prep as string,\n\t\tcustomized as string,\n\t\tletter_status as string,\n\t\tdate_entered as string,\n\t\tentered_by_user_code as string,\n\t\tfile_size as string,\n\t\tbatch_id as string,\n\t\tselected as string,\n\t\tissue_seq as string,\n\t\temail_sender as string,\n\t\temail_cc as string,\n\t\temail_bcc as string,\n\t\tdocument_type as string,\n\t\tlanguage_id as string,\n\t\tdate_changed as string,\n\t\tchanged_by_user_code as string,\n\t\tdtProcessedDate as string,\n\t\tbDelete as string\n\t),\n\tdeletable:false,\n\tinsertable:true,\n\tupdateable:false,\n\tupsertable:false,\n\tformat: 'table',\n\tpreSQLs:['trucate tabel letter'],\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true,\n\terrorHandlingOption: 'stopOnFirstError',\n\tmapColumn(\n\t\tcompany_id,\n\t\tcase_id,\n\t\tletter_seq,\n\t\tstandard_letter_id,\n\t\tletter_type_code,\n\t\tsend_to_address_id,\n\t\tcustom_file_name,\n\t\tdate_sent,\n\t\tfaxed,\n\t\tcarbon_copy_1,\n\t\tcarbon_copy_2,\n\t\tcarbon_copy_3,\n\t\tcarbon_copy_4,\n\t\tcarbon_copy_5,\n\t\tproofed,\n\t\temail_to,\n\t\temail_subject,\n\t\temail_type,\n\t\tauto_prep,\n\t\tcustomized,\n\t\tletter_status,\n\t\tdate_entered,\n\t\tentered_by_user_code,\n\t\tfile_size,\n\t\tbatch_id,\n\t\tselected,\n\t\tissue_seq,\n\t\temail_sender,\n\t\temail_cc,\n\t\temail_bcc,\n\t\tdocument_type,\n\t\tlanguage_id,\n\t\tdate_changed,\n\t\tchanged_by_user_code,\n\t\tdtProcessedDate,\n\t\tbDelete\n\t)) ~> sink1"
+		}
+	}
+}

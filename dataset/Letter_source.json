@@ -1,0 +1,167 @@
+{
+	"name": "Letter_source",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AzureBlobStorage_LS",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "Excel",
+		"typeProperties": {
+			"sheetName": "Sheet1",
+			"location": {
+				"type": "AzureBlobStorageLocation",
+				"fileName": "Letter.xlsx",
+				"container": "input"
+			},
+			"firstRowAsHeader": true
+		},
+		"schema": [
+			{
+				"name": "company_id",
+				"type": "String"
+			},
+			{
+				"name": "case_id",
+				"type": "String"
+			},
+			{
+				"name": "letter_seq",
+				"type": "String"
+			},
+			{
+				"name": "standard_letter_id",
+				"type": "String"
+			},
+			{
+				"name": "letter_type_code",
+				"type": "String"
+			},
+			{
+				"name": "send_to_address_id",
+				"type": "String"
+			},
+			{
+				"name": "custom_file_name",
+				"type": "String"
+			},
+			{
+				"name": "date_sent",
+				"type": "String"
+			},
+			{
+				"name": "faxed",
+				"type": "String"
+			},
+			{
+				"name": "carbon_copy_1",
+				"type": "String"
+			},
+			{
+				"name": "carbon_copy_2",
+				"type": "String"
+			},
+			{
+				"name": "carbon_copy_3",
+				"type": "String"
+			},
+			{
+				"name": "carbon_copy_4",
+				"type": "String"
+			},
+			{
+				"name": "carbon_copy_5",
+				"type": "String"
+			},
+			{
+				"name": "proofed",
+				"type": "String"
+			},
+			{
+				"name": "email_to",
+				"type": "String"
+			},
+			{
+				"name": "email_subject",
+				"type": "String"
+			},
+			{
+				"name": "email_type",
+				"type": "String"
+			},
+			{
+				"name": "auto_prep",
+				"type": "String"
+			},
+			{
+				"name": "customized",
+				"type": "String"
+			},
+			{
+				"name": "letter_status",
+				"type": "String"
+			},
+			{
+				"name": "date_entered",
+				"type": "String"
+			},
+			{
+				"name": "entered_by_user_code",
+				"type": "String"
+			},
+			{
+				"name": "file_size",
+				"type": "String"
+			},
+			{
+				"name": "batch_id",
+				"type": "String"
+			},
+			{
+				"name": "selected",
+				"type": "String"
+			},
+			{
+				"name": "issue_seq",
+				"type": "String"
+			},
+			{
+				"name": "email_sender",
+				"type": "String"
+			},
+			{
+				"name": "email_cc",
+				"type": "String"
+			},
+			{
+				"name": "email_bcc",
+				"type": "String"
+			},
+			{
+				"name": "document_type",
+				"type": "String"
+			},
+			{
+				"name": "language_id",
+				"type": "String"
+			},
+			{
+				"name": "date_changed",
+				"type": "String"
+			},
+			{
+				"name": "changed_by_user_code",
+				"type": "String"
+			},
+			{
+				"name": "dtProcessedDate",
+				"type": "String"
+			},
+			{
+				"name": "bDelete",
+				"type": "String"
+			}
+		]
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

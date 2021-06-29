@@ -1,0 +1,162 @@
+{
+	"name": "Letter_DB",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AzureSqlDatabase_LS",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [
+			{
+				"name": "company_id",
+				"type": "nvarchar"
+			},
+			{
+				"name": "case_id",
+				"type": "nvarchar"
+			},
+			{
+				"name": "letter_seq",
+				"type": "nvarchar"
+			},
+			{
+				"name": "standard_letter_id",
+				"type": "nvarchar"
+			},
+			{
+				"name": "letter_type_code",
+				"type": "nvarchar"
+			},
+			{
+				"name": "send_to_address_id",
+				"type": "nvarchar"
+			},
+			{
+				"name": "custom_file_name",
+				"type": "nvarchar"
+			},
+			{
+				"name": "date_sent",
+				"type": "nvarchar"
+			},
+			{
+				"name": "faxed",
+				"type": "nvarchar"
+			},
+			{
+				"name": "carbon_copy_1",
+				"type": "nvarchar"
+			},
+			{
+				"name": "carbon_copy_2",
+				"type": "nvarchar"
+			},
+			{
+				"name": "carbon_copy_3",
+				"type": "nvarchar"
+			},
+			{
+				"name": "carbon_copy_4",
+				"type": "nvarchar"
+			},
+			{
+				"name": "carbon_copy_5",
+				"type": "nvarchar"
+			},
+			{
+				"name": "proofed",
+				"type": "nvarchar"
+			},
+			{
+				"name": "email_to",
+				"type": "nvarchar"
+			},
+			{
+				"name": "email_subject",
+				"type": "nvarchar"
+			},
+			{
+				"name": "email_type",
+				"type": "nvarchar"
+			},
+			{
+				"name": "auto_prep",
+				"type": "nvarchar"
+			},
+			{
+				"name": "customized",
+				"type": "nvarchar"
+			},
+			{
+				"name": "letter_status",
+				"type": "nvarchar"
+			},
+			{
+				"name": "date_entered",
+				"type": "nvarchar"
+			},
+			{
+				"name": "entered_by_user_code",
+				"type": "nvarchar"
+			},
+			{
+				"name": "file_size",
+				"type": "nvarchar"
+			},
+			{
+				"name": "batch_id",
+				"type": "nvarchar"
+			},
+			{
+				"name": "selected",
+				"type": "nvarchar"
+			},
+			{
+				"name": "issue_seq",
+				"type": "nvarchar"
+			},
+			{
+				"name": "email_sender",
+				"type": "nvarchar"
+			},
+			{
+				"name": "email_cc",
+				"type": "nvarchar"
+			},
+			{
+				"name": "email_bcc",
+				"type": "nvarchar"
+			},
+			{
+				"name": "document_type",
+				"type": "nvarchar"
+			},
+			{
+				"name": "language_id",
+				"type": "nvarchar"
+			},
+			{
+				"name": "date_changed",
+				"type": "nvarchar"
+			},
+			{
+				"name": "changed_by_user_code",
+				"type": "nvarchar"
+			},
+			{
+				"name": "dtProcessedDate",
+				"type": "nvarchar"
+			},
+			{
+				"name": "bDelete",
+				"type": "nvarchar"
+			}
+		],
+		"typeProperties": {
+			"schema": "dbo",
+			"table": "Letter"
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

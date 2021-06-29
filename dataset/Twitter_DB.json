@@ -1,0 +1,42 @@
+{
+	"name": "Twitter_DB",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AzureSqlDatabase_LS",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [
+			{
+				"name": "conversion_name",
+				"type": "nvarchar"
+			},
+			{
+				"name": "metric_Name",
+				"type": "nvarchar"
+			},
+			{
+				"name": "metric_Value",
+				"type": "nvarchar"
+			},
+			{
+				"name": "campaign_id",
+				"type": "nvarchar"
+			},
+			{
+				"name": "reportDate",
+				"type": "nvarchar"
+			},
+			{
+				"name": "campaign_account_id",
+				"type": "nvarchar"
+			}
+		],
+		"typeProperties": {
+			"schema": "dbo",
+			"table": "Twitter_conversions"
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

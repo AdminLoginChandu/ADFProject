@@ -1,0 +1,49 @@
+{
+	"name": "Twitter_Blob",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AzureBlobStorage_LS",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "DelimitedText",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobStorageLocation",
+				"folderPath": "Twitter",
+				"container": "input"
+			},
+			"columnDelimiter": "\t",
+			"escapeChar": "\\",
+			"firstRowAsHeader": true,
+			"quoteChar": "\""
+		},
+		"schema": [
+			{
+				"name": "conversion_name",
+				"type": "String"
+			},
+			{
+				"name": "metric_Name",
+				"type": "String"
+			},
+			{
+				"name": "metric_Value",
+				"type": "String"
+			},
+			{
+				"name": "campaign_id",
+				"type": "String"
+			},
+			{
+				"name": "reportDate",
+				"type": "String"
+			},
+			{
+				"name": "campaign_account_id",
+				"type": "String"
+			}
+		]
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}
