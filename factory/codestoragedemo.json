@@ -1,0 +1,9 @@
+{
+	"name": "codestoragedemo",
+	"location": "eastus",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "bf198412-712d-4196-ae12-f980ff1f9dd8",
+		"tenantId": "189de737-c93a-4f5a-8b68-6f4ca9941912"
+	}
+}
