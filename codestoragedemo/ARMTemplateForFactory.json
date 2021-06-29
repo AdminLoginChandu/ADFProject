@@ -1,0 +1,1990 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"type": "string",
+			"metadata": "Data Factory name",
+			"defaultValue": "codestoragedemo"
+		},
+		"AzureBlobStorage_LS_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'AzureBlobStorage_LS'"
+		},
+		"AzureSqlDatabase_LS_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'AzureSqlDatabase_LS'"
+		}
+	},
+	"variables": {
+		"factoryId": "[concat('Microsoft.DataFactory/factories/', parameters('factoryName'))]"
+	},
+	"resources": [
+		{
+			"name": "[concat(parameters('factoryName'), '/Archive_File')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Wait1",
+						"type": "Wait",
+						"dependsOn": [],
+						"userProperties": [],
+						"typeProperties": {
+							"waitTimeInSeconds": 1
+						}
+					}
+				],
+				"annotations": [],
+				"lastPublishTime": "2021-06-20T05:45:39Z"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/FilesLoop')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Get Metadata1",
+						"type": "GetMetadata",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataset": {
+								"referenceName": "Twitter_Blob",
+								"type": "DatasetReference",
+								"parameters": {}
+							},
+							"fieldList": [
+								"childItems"
+							],
+							"storeSettings": {
+								"type": "AzureBlobStorageReadSettings",
+								"recursive": true,
+								"enablePartitionDiscovery": false
+							},
+							"formatSettings": {
+								"type": "DelimitedTextReadSettings"
+							}
+						}
+					},
+					{
+						"name": "ForEach1",
+						"type": "ForEach",
+						"dependsOn": [
+							{
+								"activity": "Get Metadata1",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"items": {
+								"value": "@activity('Get Metadata1').output.Childitems",
+								"type": "Expression"
+							},
+							"isSequential": true,
+							"activities": [
+								{
+									"name": "Copy data1",
+									"type": "Copy",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "7.00:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"source": {
+											"type": "DelimitedTextSource",
+											"storeSettings": {
+												"type": "AzureBlobStorageReadSettings",
+												"recursive": true,
+												"wildcardFolderPath": "Twitter",
+												"wildcardFileName": {
+													"value": "@item().name",
+													"type": "Expression"
+												},
+												"enablePartitionDiscovery": false
+											},
+											"formatSettings": {
+												"type": "DelimitedTextReadSettings"
+											}
+										},
+										"sink": {
+											"type": "AzureSqlSink"
+										},
+										"enableStaging": false,
+										"translator": {
+											"type": "TabularTranslator",
+											"typeConversion": true,
+											"typeConversionSettings": {
+												"allowDataTruncation": true,
+												"treatBooleanAsNumber": false
+											}
+										}
+									},
+									"inputs": [
+										{
+											"referenceName": "Twitter_Blob",
+											"type": "DatasetReference",
+											"parameters": {}
+										}
+									],
+									"outputs": [
+										{
+											"referenceName": "Twitter_DB",
+											"type": "DatasetReference",
+											"parameters": {}
+										}
+									]
+								}
+							]
+						}
+					}
+				],
+				"annotations": [],
+				"lastPublishTime": "2021-06-20T06:31:29Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/Twitter_Blob')]",
+				"[concat(variables('factoryId'), '/datasets/Twitter_DB')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/LetterLoad')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Blob to DB Load",
+						"type": "Copy",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [
+							{
+								"name": "Source",
+								"value": "input//Letter.xlsx"
+							},
+							{
+								"name": "Destination",
+								"value": "dbo.Letter"
+							}
+						],
+						"typeProperties": {
+							"source": {
+								"type": "ExcelSource",
+								"storeSettings": {
+									"type": "AzureBlobStorageReadSettings",
+									"recursive": false,
+									"enablePartitionDiscovery": false
+								}
+							},
+							"sink": {
+								"type": "AzureSqlSink",
+								"disableMetricsCollection": false
+							},
+							"enableStaging": false,
+							"translator": {
+								"type": "TabularTranslator",
+								"mappings": [
+									{
+										"source": {
+											"name": "company_id",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "id",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "case_id",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "case_id",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "letter_seq",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "letter_seq",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "standard_letter_id",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "standard_letter_id",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "letter_type_code",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "letter_type_code",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "send_to_address_id",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "send_to_address_id",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "custom_file_name",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "custom_file_name",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "date_sent",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "date_sent",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "faxed",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "faxed",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "carbon_copy_1",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "carbon_copy_1",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "carbon_copy_2",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "carbon_copy_2",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "carbon_copy_3",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "carbon_copy_3",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "carbon_copy_4",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "carbon_copy_4",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "carbon_copy_5",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "carbon_copy_5",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "proofed",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "proofed",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "email_to",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "email_to",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "email_subject",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "email_subject",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "email_type",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "email_type",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "auto_prep",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "auto_prep",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "customized",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "customized",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "letter_status",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "letter_status",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "date_entered",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "date_entered",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "entered_by_user_code",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "entered_by_user_code",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "file_size",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "file_size",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "batch_id",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "batch_id",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "selected",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "selected",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "issue_seq",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "issue_seq",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "email_sender",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "email_sender",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "email_cc",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "email_cc",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "email_bcc",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "email_bcc",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "document_type",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "document_type",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "language_id",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "language_id",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "date_changed",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "date_changed",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "changed_by_user_code",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "changed_by_user_code",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "dtProcessedDate",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "dtProcessedDate",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "bDelete",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "bDelete",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									}
+								],
+								"typeConversion": true,
+								"typeConversionSettings": {
+									"allowDataTruncation": true,
+									"treatBooleanAsNumber": true
+								}
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "Letter_source",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "Letter_DB",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						]
+					}
+				],
+				"annotations": [],
+				"lastPublishTime": "2021-06-02T16:33:00Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/Letter_source')]",
+				"[concat(variables('factoryId'), '/datasets/Letter_DB')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/LetterLoad_copy1')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Blob to DB Load",
+						"type": "Copy",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [
+							{
+								"name": "Source",
+								"value": "input//Letter.xlsx"
+							},
+							{
+								"name": "Destination",
+								"value": "dbo.Letter"
+							}
+						],
+						"typeProperties": {
+							"source": {
+								"type": "ExcelSource",
+								"storeSettings": {
+									"type": "AzureBlobStorageReadSettings",
+									"recursive": false,
+									"enablePartitionDiscovery": false
+								}
+							},
+							"sink": {
+								"type": "AzureSqlSink",
+								"disableMetricsCollection": false
+							},
+							"enableStaging": false,
+							"translator": {
+								"type": "TabularTranslator",
+								"mappings": [
+									{
+										"source": {
+											"name": "company_id",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "id",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "case_id",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "case_id",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "letter_seq",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "letter_seq",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "standard_letter_id",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "standard_letter_id",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "letter_type_code",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "letter_type_code",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "send_to_address_id",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "send_to_address_id",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "custom_file_name",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "custom_file_name",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "date_sent",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "date_sent",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "faxed",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "faxed",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "carbon_copy_1",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "carbon_copy_1",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "carbon_copy_2",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "carbon_copy_2",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "carbon_copy_3",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "carbon_copy_3",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "carbon_copy_4",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "carbon_copy_4",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "carbon_copy_5",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "carbon_copy_5",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "proofed",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "proofed",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "email_to",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "email_to",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "email_subject",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "email_subject",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "email_type",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "email_type",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "auto_prep",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "auto_prep",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "customized",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "customized",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "letter_status",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "letter_status",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "date_entered",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "date_entered",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "entered_by_user_code",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "entered_by_user_code",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "file_size",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "file_size",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "batch_id",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "batch_id",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "selected",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "selected",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "issue_seq",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "issue_seq",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "email_sender",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "email_sender",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "email_cc",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "email_cc",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "email_bcc",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "email_bcc",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "document_type",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "document_type",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "language_id",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "language_id",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "date_changed",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "date_changed",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "changed_by_user_code",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "changed_by_user_code",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "dtProcessedDate",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "dtProcessedDate",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "bDelete",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "bDelete",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									}
+								],
+								"typeConversion": true,
+								"typeConversionSettings": {
+									"allowDataTruncation": true,
+									"treatBooleanAsNumber": true
+								}
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "Letter_source",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "Letter_DB",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						]
+					},
+					{
+						"name": "logics app",
+						"type": "WebActivity",
+						"dependsOn": [
+							{
+								"activity": "Set variable1",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"url": "https://prod-72.eastus.logic.azure.com:443/workflows/b9f7b73e80854fa9bd3407c6168ade1f/triggers/manual/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=KgUNelfQocYfgd9o5CfNF88pX2X3QUY52Su9Y7CpbEM",
+							"method": "POST",
+							"headers": {},
+							"body": {
+								"value": "{\n   \"DataFactoryName\": \"@{pipeline().DataFactory}\",\n   \"PipelineName\": \"@{pipeline().Pipeline}\",\n   \"Subject\": \"An error has occurred!\",\n  \"EmailTo\": \"ajithreddys@outlook.com\",\n   \"Error message.\" : \"variables('errormsg')\"\n}\t",
+								"type": "Expression"
+							}
+						}
+					},
+					{
+						"name": "Set variable1",
+						"type": "SetVariable",
+						"dependsOn": [
+							{
+								"activity": "Blob to DB Load",
+								"dependencyConditions": [
+									"Failed"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"variableName": "errormsg",
+							"value": {
+								"value": "@activity('Blob to DB Load').Error.message",
+								"type": "Expression"
+							}
+						}
+					}
+				],
+				"variables": {
+					"errormsg": {
+						"type": "String"
+					}
+				},
+				"annotations": [],
+				"lastPublishTime": "2021-06-11T15:33:56Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/Letter_source')]",
+				"[concat(variables('factoryId'), '/datasets/Letter_DB')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/LoopExcelSheets')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "ForEach1",
+						"type": "ForEach",
+						"dependsOn": [],
+						"userProperties": [],
+						"typeProperties": {
+							"items": {
+								"value": "@variables('SheetName')",
+								"type": "Expression"
+							},
+							"isSequential": true,
+							"activities": [
+								{
+									"name": "Copy data1",
+									"type": "Copy",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "7.00:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"source": {
+											"type": "ExcelSource",
+											"storeSettings": {
+												"type": "AzureBlobStorageReadSettings",
+												"recursive": true,
+												"enablePartitionDiscovery": false
+											}
+										},
+										"sink": {
+											"type": "DelimitedTextSink",
+											"storeSettings": {
+												"type": "AzureBlobStorageWriteSettings"
+											},
+											"formatSettings": {
+												"type": "DelimitedTextWriteSettings",
+												"quoteAllText": true,
+												"fileExtension": ".txt"
+											}
+										},
+										"enableStaging": false,
+										"translator": {
+											"type": "TabularTranslator",
+											"typeConversion": true,
+											"typeConversionSettings": {
+												"allowDataTruncation": true,
+												"treatBooleanAsNumber": false
+											}
+										}
+									},
+									"inputs": [
+										{
+											"referenceName": "IdSite_SheetLoop_Blob",
+											"type": "DatasetReference",
+											"parameters": {
+												"SheetName": {
+													"value": "@item()",
+													"type": "Expression"
+												}
+											}
+										}
+									],
+									"outputs": [
+										{
+											"referenceName": "DelimitedText1",
+											"type": "DatasetReference",
+											"parameters": {}
+										}
+									]
+								}
+							]
+						}
+					}
+				],
+				"variables": {
+					"SheetName": {
+						"type": "Array",
+						"defaultValue": [
+							"ID",
+							"Sites"
+						]
+					}
+				},
+				"annotations": [],
+				"lastPublishTime": "2021-06-02T16:33:01Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/IdSite_SheetLoop_Blob')]",
+				"[concat(variables('factoryId'), '/datasets/DelimitedText1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/pipeline1')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Wait1",
+						"type": "Wait",
+						"dependsOn": [],
+						"userProperties": [],
+						"typeProperties": {
+							"waitTimeInSeconds": 1
+						}
+					}
+				],
+				"annotations": []
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/pipeline2')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Wait1",
+						"type": "Wait",
+						"dependsOn": [],
+						"userProperties": [],
+						"typeProperties": {
+							"waitTimeInSeconds": 1
+						}
+					}
+				],
+				"annotations": []
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/pipeline3')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Wait1",
+						"type": "Wait",
+						"dependsOn": [],
+						"userProperties": [],
+						"typeProperties": {
+							"waitTimeInSeconds": 1
+						}
+					}
+				],
+				"annotations": []
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/Blob_Demo')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureBlobStorage_LS",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"folderPath": "Demo",
+						"container": "input"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureBlobStorage_LS')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DelimitedText1')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureBlobStorage_LS",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"container": "archive"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureBlobStorage_LS')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/IdSite_SheetLoop_Blob')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureBlobStorage_LS",
+					"type": "LinkedServiceReference"
+				},
+				"parameters": {
+					"SheetName": {
+						"type": "string"
+					}
+				},
+				"annotations": [],
+				"type": "Excel",
+				"typeProperties": {
+					"sheetName": {
+						"value": "@dataset().SheetName",
+						"type": "Expression"
+					},
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"fileName": "ID and Sites.xlsx",
+						"container": "input"
+					},
+					"firstRowAsHeader": true
+				},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureBlobStorage_LS')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/Letter_DB')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureSqlDatabase_LS",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [
+					{
+						"name": "company_id",
+						"type": "nvarchar"
+					},
+					{
+						"name": "case_id",
+						"type": "nvarchar"
+					},
+					{
+						"name": "letter_seq",
+						"type": "nvarchar"
+					},
+					{
+						"name": "standard_letter_id",
+						"type": "nvarchar"
+					},
+					{
+						"name": "letter_type_code",
+						"type": "nvarchar"
+					},
+					{
+						"name": "send_to_address_id",
+						"type": "nvarchar"
+					},
+					{
+						"name": "custom_file_name",
+						"type": "nvarchar"
+					},
+					{
+						"name": "date_sent",
+						"type": "nvarchar"
+					},
+					{
+						"name": "faxed",
+						"type": "nvarchar"
+					},
+					{
+						"name": "carbon_copy_1",
+						"type": "nvarchar"
+					},
+					{
+						"name": "carbon_copy_2",
+						"type": "nvarchar"
+					},
+					{
+						"name": "carbon_copy_3",
+						"type": "nvarchar"
+					},
+					{
+						"name": "carbon_copy_4",
+						"type": "nvarchar"
+					},
+					{
+						"name": "carbon_copy_5",
+						"type": "nvarchar"
+					},
+					{
+						"name": "proofed",
+						"type": "nvarchar"
+					},
+					{
+						"name": "email_to",
+						"type": "nvarchar"
+					},
+					{
+						"name": "email_subject",
+						"type": "nvarchar"
+					},
+					{
+						"name": "email_type",
+						"type": "nvarchar"
+					},
+					{
+						"name": "auto_prep",
+						"type": "nvarchar"
+					},
+					{
+						"name": "customized",
+						"type": "nvarchar"
+					},
+					{
+						"name": "letter_status",
+						"type": "nvarchar"
+					},
+					{
+						"name": "date_entered",
+						"type": "nvarchar"
+					},
+					{
+						"name": "entered_by_user_code",
+						"type": "nvarchar"
+					},
+					{
+						"name": "file_size",
+						"type": "nvarchar"
+					},
+					{
+						"name": "batch_id",
+						"type": "nvarchar"
+					},
+					{
+						"name": "selected",
+						"type": "nvarchar"
+					},
+					{
+						"name": "issue_seq",
+						"type": "nvarchar"
+					},
+					{
+						"name": "email_sender",
+						"type": "nvarchar"
+					},
+					{
+						"name": "email_cc",
+						"type": "nvarchar"
+					},
+					{
+						"name": "email_bcc",
+						"type": "nvarchar"
+					},
+					{
+						"name": "document_type",
+						"type": "nvarchar"
+					},
+					{
+						"name": "language_id",
+						"type": "nvarchar"
+					},
+					{
+						"name": "date_changed",
+						"type": "nvarchar"
+					},
+					{
+						"name": "changed_by_user_code",
+						"type": "nvarchar"
+					},
+					{
+						"name": "dtProcessedDate",
+						"type": "nvarchar"
+					},
+					{
+						"name": "bDelete",
+						"type": "nvarchar"
+					}
+				],
+				"typeProperties": {
+					"schema": "dbo",
+					"table": "Letter"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureSqlDatabase_LS')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/Letter_source')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureBlobStorage_LS",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "Excel",
+				"typeProperties": {
+					"sheetName": "Sheet1",
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"fileName": "Letter.xlsx",
+						"container": "input"
+					},
+					"firstRowAsHeader": true
+				},
+				"schema": [
+					{
+						"name": "company_id",
+						"type": "String"
+					},
+					{
+						"name": "case_id",
+						"type": "String"
+					},
+					{
+						"name": "letter_seq",
+						"type": "String"
+					},
+					{
+						"name": "standard_letter_id",
+						"type": "String"
+					},
+					{
+						"name": "letter_type_code",
+						"type": "String"
+					},
+					{
+						"name": "send_to_address_id",
+						"type": "String"
+					},
+					{
+						"name": "custom_file_name",
+						"type": "String"
+					},
+					{
+						"name": "date_sent",
+						"type": "String"
+					},
+					{
+						"name": "faxed",
+						"type": "String"
+					},
+					{
+						"name": "carbon_copy_1",
+						"type": "String"
+					},
+					{
+						"name": "carbon_copy_2",
+						"type": "String"
+					},
+					{
+						"name": "carbon_copy_3",
+						"type": "String"
+					},
+					{
+						"name": "carbon_copy_4",
+						"type": "String"
+					},
+					{
+						"name": "carbon_copy_5",
+						"type": "String"
+					},
+					{
+						"name": "proofed",
+						"type": "String"
+					},
+					{
+						"name": "email_to",
+						"type": "String"
+					},
+					{
+						"name": "email_subject",
+						"type": "String"
+					},
+					{
+						"name": "email_type",
+						"type": "String"
+					},
+					{
+						"name": "auto_prep",
+						"type": "String"
+					},
+					{
+						"name": "customized",
+						"type": "String"
+					},
+					{
+						"name": "letter_status",
+						"type": "String"
+					},
+					{
+						"name": "date_entered",
+						"type": "String"
+					},
+					{
+						"name": "entered_by_user_code",
+						"type": "String"
+					},
+					{
+						"name": "file_size",
+						"type": "String"
+					},
+					{
+						"name": "batch_id",
+						"type": "String"
+					},
+					{
+						"name": "selected",
+						"type": "String"
+					},
+					{
+						"name": "issue_seq",
+						"type": "String"
+					},
+					{
+						"name": "email_sender",
+						"type": "String"
+					},
+					{
+						"name": "email_cc",
+						"type": "String"
+					},
+					{
+						"name": "email_bcc",
+						"type": "String"
+					},
+					{
+						"name": "document_type",
+						"type": "String"
+					},
+					{
+						"name": "language_id",
+						"type": "String"
+					},
+					{
+						"name": "date_changed",
+						"type": "String"
+					},
+					{
+						"name": "changed_by_user_code",
+						"type": "String"
+					},
+					{
+						"name": "dtProcessedDate",
+						"type": "String"
+					},
+					{
+						"name": "bDelete",
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureBlobStorage_LS')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/Twitter_Blob')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureBlobStorage_LS",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"folderPath": "Twitter",
+						"container": "input"
+					},
+					"columnDelimiter": "\t",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": [
+					{
+						"name": "conversion_name",
+						"type": "String"
+					},
+					{
+						"name": "metric_Name",
+						"type": "String"
+					},
+					{
+						"name": "metric_Value",
+						"type": "String"
+					},
+					{
+						"name": "campaign_id",
+						"type": "String"
+					},
+					{
+						"name": "reportDate",
+						"type": "String"
+					},
+					{
+						"name": "campaign_account_id",
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureBlobStorage_LS')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/Twitter_DB')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureSqlDatabase_LS",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [
+					{
+						"name": "conversion_name",
+						"type": "nvarchar"
+					},
+					{
+						"name": "metric_Name",
+						"type": "nvarchar"
+					},
+					{
+						"name": "metric_Value",
+						"type": "nvarchar"
+					},
+					{
+						"name": "campaign_id",
+						"type": "nvarchar"
+					},
+					{
+						"name": "reportDate",
+						"type": "nvarchar"
+					},
+					{
+						"name": "campaign_account_id",
+						"type": "nvarchar"
+					}
+				],
+				"typeProperties": {
+					"schema": "dbo",
+					"table": "Twitter_conversions"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureSqlDatabase_LS')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/AzureBlobStorage_LS')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureBlobStorage",
+				"typeProperties": {
+					"connectionString": "[parameters('AzureBlobStorage_LS_connectionString')]"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/AzureSqlDatabase_LS')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureSqlDatabase",
+				"typeProperties": {
+					"connectionString": "[parameters('AzureSqlDatabase_LS_connectionString')]"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/LetterLoad')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "Letter_source",
+								"type": "DatasetReference"
+							},
+							"name": "source1"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "Letter_DB",
+								"type": "DatasetReference"
+							},
+							"name": "sink1"
+						}
+					],
+					"transformations": [
+						{
+							"name": "DerivedColumn1"
+						}
+					],
+					"script": "source(output(\n\t\tcompany_id as string,\n\t\tcase_id as string,\n\t\tletter_seq as string,\n\t\tstandard_letter_id as string,\n\t\tletter_type_code as string,\n\t\tsend_to_address_id as string,\n\t\tcustom_file_name as string,\n\t\tdate_sent as string,\n\t\tfaxed as string,\n\t\tcarbon_copy_1 as string,\n\t\tcarbon_copy_2 as string,\n\t\tcarbon_copy_3 as string,\n\t\tcarbon_copy_4 as string,\n\t\tcarbon_copy_5 as string,\n\t\tproofed as string,\n\t\temail_to as string,\n\t\temail_subject as string,\n\t\temail_type as string,\n\t\tauto_prep as string,\n\t\tcustomized as string,\n\t\tletter_status as string,\n\t\tdate_entered as string,\n\t\tentered_by_user_code as string,\n\t\tfile_size as string,\n\t\tbatch_id as string,\n\t\tselected as string,\n\t\tissue_seq as string,\n\t\temail_sender as string,\n\t\temail_cc as string,\n\t\temail_bcc as string,\n\t\tdocument_type as string,\n\t\tlanguage_id as string,\n\t\tdate_changed as string,\n\t\tchanged_by_user_code as string,\n\t\tdtProcessedDate as string,\n\t\tbDelete as string\n\t),\n\tallowSchemaDrift: false,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> source1\nsource1 derive(custom_file_name = iif(isNull(custom_file_name), 'Unknown', custom_file_name)) ~> DerivedColumn1\nDerivedColumn1 sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tinput(\n\t\tcompany_id as string,\n\t\tcase_id as string,\n\t\tletter_seq as string,\n\t\tstandard_letter_id as string,\n\t\tletter_type_code as string,\n\t\tsend_to_address_id as string,\n\t\tcustom_file_name as string,\n\t\tdate_sent as string,\n\t\tfaxed as string,\n\t\tcarbon_copy_1 as string,\n\t\tcarbon_copy_2 as string,\n\t\tcarbon_copy_3 as string,\n\t\tcarbon_copy_4 as string,\n\t\tcarbon_copy_5 as string,\n\t\tproofed as string,\n\t\temail_to as string,\n\t\temail_subject as string,\n\t\temail_type as string,\n\t\tauto_prep as string,\n\t\tcustomized as string,\n\t\tletter_status as string,\n\t\tdate_entered as string,\n\t\tentered_by_user_code as string,\n\t\tfile_size as string,\n\t\tbatch_id as string,\n\t\tselected as string,\n\t\tissue_seq as string,\n\t\temail_sender as string,\n\t\temail_cc as string,\n\t\temail_bcc as string,\n\t\tdocument_type as string,\n\t\tlanguage_id as string,\n\t\tdate_changed as string,\n\t\tchanged_by_user_code as string,\n\t\tdtProcessedDate as string,\n\t\tbDelete as string\n\t),\n\tdeletable:false,\n\tinsertable:true,\n\tupdateable:false,\n\tupsertable:false,\n\tformat: 'table',\n\tpreSQLs:['trucate tabel letter'],\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true,\n\terrorHandlingOption: 'stopOnFirstError',\n\tmapColumn(\n\t\tcompany_id,\n\t\tcase_id,\n\t\tletter_seq,\n\t\tstandard_letter_id,\n\t\tletter_type_code,\n\t\tsend_to_address_id,\n\t\tcustom_file_name,\n\t\tdate_sent,\n\t\tfaxed,\n\t\tcarbon_copy_1,\n\t\tcarbon_copy_2,\n\t\tcarbon_copy_3,\n\t\tcarbon_copy_4,\n\t\tcarbon_copy_5,\n\t\tproofed,\n\t\temail_to,\n\t\temail_subject,\n\t\temail_type,\n\t\tauto_prep,\n\t\tcustomized,\n\t\tletter_status,\n\t\tdate_entered,\n\t\tentered_by_user_code,\n\t\tfile_size,\n\t\tbatch_id,\n\t\tselected,\n\t\tissue_seq,\n\t\temail_sender,\n\t\temail_cc,\n\t\temail_bcc,\n\t\tdocument_type,\n\t\tlanguage_id,\n\t\tdate_changed,\n\t\tchanged_by_user_code,\n\t\tdtProcessedDate,\n\t\tbDelete\n\t)) ~> sink1"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/Letter_source')]",
+				"[concat(variables('factoryId'), '/datasets/Letter_DB')]"
+			]
+		}
+	]
+}
